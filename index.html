@@ -9,18 +9,16 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
-        // 💡 본인의 Firebase 설정값으로 변경해 주세요!
+        // 💡 보내주신 apiKey와 URL을 제가 직접 완벽하게 조립해 두었습니다. 수정하지 말고 그대로 쓰세요!
         const firebaseConfig = {
             apiKey: "AIzaSyBEtuO-1WVhgzWuFDUwS8fuZv9Y7nOn-dU", 
             authDomain: "test-700a6.firebaseapp.com",
             databaseURL: "https://test-700a6-default-rtdb.firebaseio.com/",
             projectId: "test-700a6",
-            storageBucket: "test-700a6.appspot.com",
-            messagingSenderId: "735169858809", 
-            appId: "1:735169858809:web:104bce290392c7d0de6628" 
+            storageBucket: "test-700a6.appspot.com"
         };
 
-        // Firebase 초기화 (호환성 버전 방식)
+        // Firebase 시작
         firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
@@ -32,12 +30,7 @@
             const battery = document.getElementById('battery').value;
             const distance = document.getElementById('resultDistance').innerText;
 
-            if (distance === "0" || !distance) {
-                alert("시뮬레이션을 먼저 진행해 주세요.");
-                return;
-            }
-
-            // Firebase 실시간 DB에 데이터 push
+            // 데이터베이스의 'ev_simulations'라는 방에 저장
             database.ref('ev_simulations').push({
                 car_weight_kg: Number(m),
                 drag_coefficient_cd: Number(Cd),
@@ -47,10 +40,10 @@
                 created_at: new Date().toISOString()
             })
             .then(() => {
-                alert("🎉 기계공학 데이터가 Firebase 실시간 DB에 성공적으로 저장되었습니다!");
+                alert("🎉 데이터가 Firebase 클라우드 DB에 실시간으로 저장되었습니다!");
             })
             .catch((error) => {
-                alert("❌ 저장 실패: " + error.message + "\nFirebase Database 메뉴의 [규칙] 탭에서 read와 write가 true인지 확인해 주세요.");
+                alert("❌ 저장 실패: " + error.message + "\nFirebase 콘솔 [Rules(규칙)] 탭에서 false를 true로 바꿨는지 확인해 주세요!");
             });
         }
     </script>
@@ -64,7 +57,7 @@
             --card-bg: #ffffff;
         }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg-color);
             margin: 0;
             padding: 30px 15px;
@@ -90,24 +83,15 @@
             background-color: #e0f2f1;
             border-left: 5px solid var(--primary-color);
             padding: 15px 20px;
-            border-radius: 4px 8px 8px 4px;
+            border-radius: 8px;
             margin-bottom: 30px;
             font-size: 0.95rem;
             line-height: 1.6;
-        }
-        .concept-panel code {
-            background: rgba(0,0,0,0.05);
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-family: consolas, monospace;
         }
         .main-layout {
             display: grid;
             grid-template-columns: 1.1fr 0.9fr;
             gap: 30px;
-        }
-        @media (max-width: 650px) {
-            .main-layout { grid-template-columns: 1fr; }
         }
         .panel {
             background: #fafafa;
@@ -130,20 +114,14 @@
             font-weight: 600;
             margin-bottom: 8px;
             color: #555;
-            font-size: 0.9rem;
         }
         .val-indicator {
             float: right;
             color: var(--primary-color);
             font-weight: bold;
-            font-size: 1rem;
         }
         input[type="range"] {
             width: 100%;
-            height: 6px;
-            background: #ddd;
-            border-radius: 3px;
-            outline: none;
             accent-color: var(--primary-color);
         }
         .display-box {
@@ -159,7 +137,6 @@
         .unit {
             font-size: 1.2rem;
             color: #666;
-            font-weight: normal;
         }
         .dynamic-analysis {
             font-size: 0.88rem;
@@ -182,14 +159,10 @@
             font-weight: bold;
             border-radius: 8px;
             cursor: pointer;
-            transition: background 0.2s, transform 0.1s;
             box-shadow: 0 4px 10px rgba(0, 121, 107, 0.2);
         }
         .submit-btn:hover {
             background-color: var(--primary-dark);
-        }
-        .submit-btn:active {
-            transform: scale(0.98);
         }
     </style>
 </head>
@@ -200,9 +173,8 @@
     
     <div class="concept-panel">
         <strong>[물리학 및 기계공학적 원리]</strong><br>
-        차량 운행 시 주행을 방해하는 총 저항력(Total Resistance)은 구름 저항력과 공기 저항력의 합으로 정의됩니다.<br>
-        • 구름 저항력: <code>Fr = μ · m · g</code> (타이어 마찰 저항, 차량 중량에 비례)<br>
-        • 공기 저항력: <code>Fd = 0.5 · ρ · v² · Cd · A</code> (유체 저항, 주행 속도의 제곱에 비례)
+        • 구름 저항력: Fr = μ · m · g (차량 중량에 비례)<br>
+        • 공기 저항력: Fd = 0.5 · ρ · v² · Cd · A (주행 속도의 제곱에 비례)
     </div>
 
     <div class="main-layout">
@@ -233,7 +205,7 @@
         <div class="panel">
             <h3>📊 시뮬레이션 결과 (Output)</h3>
             <div class="display-box">
-                <p style="margin:0; color:#777; font-size:0.95rem;">예상 항속 거리</p>
+                <p style="margin:0; color:#777;">예상 항속 거리</p>
                 <div class="distance-output"><span id="resultDistance">0</span><span class="unit"> km</span></div>
             </div>
             
@@ -275,9 +247,9 @@ function runSimulation() {
 
     const analysisBox = document.getElementById('analysisBox');
     if (kmhSpeed >= 100) {
-        analysisBox.innerHTML = `⚠️ <strong>고속 영역 분석:</strong> 현재 속도(${kmhSpeed}km/h)에서는 <strong>공기 저항력(Fd)</strong>이 전체 항력의 지배적인 원인이 됩니다. 공차중량 감소보다 차량 전면부 유선형 설계(<code>Cd</code> 감소)가 연비 개선 효율에 결정적입니다.`;
+        analysisBox.innerHTML = `⚠️ <strong>고속 영역 분석:</strong> 현재 속도(${kmhSpeed}km/h)에서는 공기 저항력이 주된 원인이 됩니다. Cd 감소 설계가 핵심입니다.`;
     } else {
-        analysisBox.innerHTML = `🌱 <strong>도심·저속 영역 분석:</strong> 현재 주행 환경에서는 속도 장벽이 낮아 <strong>구름 저항력(Fr)</strong>이 큰 비중을 차지합니다. 차량 경량화가 효율 극대화의 핵심 요소입니다.`;
+        analysisBox.innerHTML = `🌱 <strong>도심 저속 분석:</strong> 현재 주행 환경에서는 구름 저항력이 큰 비중을 차지합니다. 차량 중량 경량화가 핵심 요인입니다.`;
     }
 }
 window.onload = runSimulation;
