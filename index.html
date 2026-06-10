@@ -5,29 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>기계공학 융합형: 친환경 전기차 효율 시뮬레이터</title>
     
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
-        // 💡 보내주신 Firebase 데이터베이스 URL 주소를 기반으로 완성한 설정값입니다.
+    <script>
+        // 💡 본인의 Firebase 설정값으로 변경해 주세요!
         const firebaseConfig = {
-            // ⚠️ [필수] 본인의 Firebase 콘솔에서 발급받은 실제 apiKey를 아래에 붙여넣어 주세요!
             apiKey: "AIzaSyBEtuO-1WVhgzWuFDUwS8fuZv9Y7nOn-dU", 
             authDomain: "test-700a6.firebaseapp.com",
-            databaseURL: "https://test-700a6-default-rtdb.firebaseio.com/", // 👈 보내주신 주소가 적용되었습니다.
+            databaseURL: "https://test-700a6-default-rtdb.firebaseio.com/",
             projectId: "test-700a6",
             storageBucket: "test-700a6.appspot.com",
-            messagingSenderId: "123456789012", // ⚠️ 본인의 설정값에 맞춰 변경하면 더 좋습니다.
-            // ⚠️ [필수] 본인의 Firebase 콘솔에서 발급받은 실제 appId를 아래에 붙여넣어 주세요!
-            appId: "1:123456789012:web:abcdef123456" 
+            messagingSenderId: "735169858809", 
+            appId: "1:735169858809:web:104bce290392c7d0de6628" 
         };
 
-        // Firebase 애플리케이션 및 실시간 데이터베이스 초기화
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        // Firebase 초기화 (호환성 버전 방식)
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
 
-        // 클라우드 저장 기능을 전역 함수로 등록
-        window.saveDataToFirebase = function() {
+        // 데이터 저장 함수
+        function saveDataToFirebase() {
             const m = document.getElementById('weight').value;
             const Cd = document.getElementById('cd').value;
             const speed = document.getElementById('speed').value;
@@ -39,8 +37,8 @@
                 return;
             }
 
-            // 'ev_simulations' 경로에 시뮬레이션 결과 데이터 전송
-            push(ref(database, 'ev_simulations'), {
+            // Firebase 실시간 DB에 데이터 push
+            database.ref('ev_simulations').push({
                 car_weight_kg: Number(m),
                 drag_coefficient_cd: Number(Cd),
                 driving_speed_kmh: Number(speed),
@@ -52,7 +50,7 @@
                 alert("🎉 기계공학 데이터가 Firebase 실시간 DB에 성공적으로 저장되었습니다!");
             })
             .catch((error) => {
-                alert("❌ 저장 실패: " + error.message + "\nFirebase 데이터베이스의 [규칙] 탭에서 read와 write가 true로 설정되어 있는지 확인해 주세요.");
+                alert("❌ 저장 실패: " + error.message + "\nFirebase Database 메뉴의 [규칙] 탭에서 read와 write가 true인지 확인해 주세요.");
             });
         }
     </script>
@@ -130,4 +128,160 @@
         label {
             display: block;
             font-weight: 600;
-            margin
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        .val-indicator {
+            float: right;
+            color: var(--primary-color);
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: #ddd;
+            border-radius: 3px;
+            outline: none;
+            accent-color: var(--primary-color);
+        }
+        .display-box {
+            text-align: center;
+            padding: 15px 0;
+        }
+        .distance-output {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            margin: 10px 0;
+        }
+        .unit {
+            font-size: 1.2rem;
+            color: #666;
+            font-weight: normal;
+        }
+        .dynamic-analysis {
+            font-size: 0.88rem;
+            color: #555;
+            background: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px dashed #ccc;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            min-height: 90px;
+        }
+        .submit-btn {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 10px rgba(0, 121, 107, 0.2);
+        }
+        .submit-btn:hover {
+            background-color: var(--primary-dark);
+        }
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🔋 기계공학-SW 융합: 친환경 전기차 효율 시뮬레이터</h1>
+    
+    <div class="concept-panel">
+        <strong>[물리학 및 기계공학적 원리]</strong><br>
+        차량 운행 시 주행을 방해하는 총 저항력(Total Resistance)은 구름 저항력과 공기 저항력의 합으로 정의됩니다.<br>
+        • 구름 저항력: <code>Fr = μ · m · g</code> (타이어 마찰 저항, 차량 중량에 비례)<br>
+        • 공기 저항력: <code>Fd = 0.5 · ρ · v² · Cd · A</code> (유체 저항, 주행 속도의 제곱에 비례)
+    </div>
+
+    <div class="main-layout">
+        <div class="panel">
+            <h3>🛠️ 차량 설계 파라미터 (Input)</h3>
+            
+            <div class="control-group">
+                <label>차량 공차중량 (kg) <span class="val-indicator" id="weightVal">1600</span></label>
+                <input type="range" id="weight" min="1000" max="2500" step="50" value="1600" oninput="runSimulation()">
+            </div>
+
+            <div class="control-group">
+                <label>공기저항계수 (Cd) <span class="val-indicator" id="cdVal">0.26</span></label>
+                <input type="range" id="cd" min="0.18" max="0.45" step="0.01" value="0.26" oninput="runSimulation()">
+            </div>
+
+            <div class="control-group">
+                <label>크루즈 주행 속도 (km/h) <span class="val-indicator" id="speedVal">80</span></label>
+                <input type="range" id="speed" min="30" max="150" step="5" value="80" oninput="runSimulation()">
+            </div>
+
+            <div class="control-group">
+                <label>배터리 팩 용량 (kWh) <span class="val-indicator" id="batteryVal">75</span></label>
+                <input type="range" id="battery" min="40" max="100" step="5" value="75" oninput="runSimulation()">
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>📊 시뮬레이션 결과 (Output)</h3>
+            <div class="display-box">
+                <p style="margin:0; color:#777; font-size:0.95rem;">예상 항속 거리</p>
+                <div class="distance-output"><span id="resultDistance">0</span><span class="unit"> km</span></div>
+            </div>
+            
+            <div class="dynamic-analysis" id="analysisBox">
+                슬라이더 바를 조작하여 설계 수치를 변경해 보세요.
+            </div>
+
+            <button class="submit-btn" onclick="saveDataToFirebase()">💾 클라우드 DB에 설계 저장</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function runSimulation() {
+    const m = parseFloat(document.getElementById('weight').value);
+    const Cd = parseFloat(document.getElementById('cd').value);
+    const kmhSpeed = parseFloat(document.getElementById('speed').value);
+    const batteryKwh = parseFloat(document.getElementById('battery').value);
+
+    document.getElementById('weightVal').innerText = m;
+    document.getElementById('cdVal').innerText = Cd;
+    document.getElementById('speedVal').innerText = kmhSpeed;
+    document.getElementById('batteryVal').innerText = batteryKwh;
+
+    const g = 9.81; const mu = 0.011; const rho = 1.225; const A = 2.25;
+    const v = kmhSpeed / 3.6;
+
+    const Fr = mu * m * g;
+    const Fd = 0.5 * rho * (v * v) * Cd * A;
+    const F_total = Fr + Fd;
+
+    const totalEnergyJoule = batteryKwh * 3600000;
+    const peEfficiency = 0.87; 
+    
+    const distanceMeter = (totalEnergyJoule * peEfficiency) / F_total;
+    const distanceKm = distanceMeter / 1000;
+
+    document.getElementById('resultDistance').innerText = distanceKm.toFixed(0);
+
+    const analysisBox = document.getElementById('analysisBox');
+    if (kmhSpeed >= 100) {
+        analysisBox.innerHTML = `⚠️ <strong>고속 영역 분석:</strong> 현재 속도(${kmhSpeed}km/h)에서는 <strong>공기 저항력(Fd)</strong>이 전체 항력의 지배적인 원인이 됩니다. 공차중량 감소보다 차량 전면부 유선형 설계(<code>Cd</code> 감소)가 연비 개선 효율에 결정적입니다.`;
+    } else {
+        analysisBox.innerHTML = `🌱 <strong>도심·저속 영역 분석:</strong> 현재 주행 환경에서는 속도 장벽이 낮아 <strong>구름 저항력(Fr)</strong>이 큰 비중을 차지합니다. 차량 경량화가 효율 극대화의 핵심 요소입니다.`;
+    }
+}
+window.onload = runSimulation;
+</script>
+
+</body>
+</html>
