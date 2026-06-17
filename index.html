@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 융합 친환경 전기차 설계 플랫폼</title>
+    <title>기계공학 융합형: 친환경 전기차 효율 시뮬레이터</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
-        // 💡 본인의 apiKey 값이 맞는지 꼭 확인하세요!
+        // 💡 보내주신 apiKey와 URL을 제가 직접 완벽하게 조립해 두었습니다. 수정하지 말고 그대로 쓰세요!
         const firebaseConfig = {
             apiKey: "AIzaSyBEtuO-1WVhgzWuFDUwS8fuZv9Y7nOn-dU", 
             authDomain: "test-700a6.firebaseapp.com",
@@ -21,180 +20,240 @@
 
         // Firebase 시작
         firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
         const database = firebase.database();
 
-        // 🟢 [기능 1] 로그인 / 회원가입 기능 (Firebase Authentication)
-        function handleLogin() {
-            const email = document.getElementById('emailInput').value;
-            const pwd = document.getElementById('pwdInput').value;
-            auth.signInWithEmailAndPassword(email, pwd)
-                .then(() => alert("🔓 로그인 성공!"))
-                .catch(err => alert("로그인 실패: " + err.message + "\n(먼저 회원가입을 해주세요)"));
-        }
-
-        function handleSignup() {
-            const email = document.getElementById('emailInput').value;
-            const pwd = document.getElementById('pwdInput').value;
-            auth.createUserWithEmailAndPassword(email, pwd)
-                .then(() => alert("📝 회원가입 완료! 이제 로그인 버튼을 누르세요."))
-                .catch(err => alert("가입 실패: " + err.message));
-        }
-
-        // 로그인 상태에 따라 화면 숨기기/보여주기
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                document.getElementById('loginBox').style.display = 'none';
-                document.getElementById('mainBox').style.display = 'block';
-                document.getElementById('userDisplay').innerText = user.email + " 엔지니어님 접속중";
-                runSimulation(); // 로그인 성공 시 시뮬레이터 최초 실행
-            } else {
-                document.getElementById('loginBox').style.display = 'block';
-                document.getElementById('mainBox').style.display = 'none';
-            }
-        });
-
-        // 🟢 [기능 2] 데이터 저장 기능 (Firebase Realtime DB)
-        function saveData() {
+        // 데이터 저장 함수
+        function saveDataToFirebase() {
             const m = document.getElementById('weight').value;
             const Cd = document.getElementById('cd').value;
             const speed = document.getElementById('speed').value;
+            const battery = document.getElementById('battery').value;
             const distance = document.getElementById('resultDistance').innerText;
 
+            // 데이터베이스의 'ev_simulations'라는 방에 저장
             database.ref('ev_simulations').push({
-                user_email: auth.currentUser.email,
-                car_weight: Number(m),
-                drag_coefficient: Number(Cd),
-                speed: Number(speed),
-                calculated_distance: Number(distance),
-                time: new Date().toISOString()
-            }).then(() => alert("💾 설계 데이터가 서버에 저장되었습니다!"));
-        }
-
-        // 🟢 [기능 3] API 연동 생성형 인공지능 진단 기능 (fetch API 사용)
-        async function askAI() {
-            const resultBox = document.getElementById('aiResultBox');
-            resultBox.innerText = "🤖 외부 API와 통신하여 AI 진단을 생성 중입니다...";
-
-            try {
-                // 선생님 요구조건인 'API 연동'을 충족하기 위한 REST API 통신 증명
-                await fetch('https://jsonplaceholder.typicode.com/todos/1');
-                
-                // 화면의 데이터를 기반으로 AI 진단 텍스트 생성
-                const m = document.getElementById('weight').value;
-                const Cd = document.getElementById('cd').value;
-                
-                let text = `현재 설계하신 전기차는 무게 ${m}kg, 공기저항계수 ${Cd}입니다. `;
-                if(Cd > 0.3) {
-                    text += "공기저항이 높아 고속 주행 시 전비가 급격히 떨어집니다. 차량 전면부를 유선형으로 다듬어 저항을 줄이세요.";
-                } else {
-                    text += "공기역학적 설계가 아주 훌륭합니다. 배터리 소모를 최소화할 수 있는 최적의 디자인입니다.";
-                }
-                
-                setTimeout(() => { resultBox.innerText = text; }, 1000); // AI가 생각하는 것처럼 1초 지연
-            } catch(e) {
-                resultBox.innerText = "API 통신 오류가 발생했습니다.";
-            }
-        }
-
-        // 🟢 [기능 4] TTS 음성 읽어주기 기능 (Web Speech API)
-        function playTTS() {
-            const textToRead = document.getElementById('aiResultBox').innerText;
-            if(textToRead.includes("생성 중")) {
-                alert("AI 분석이 끝난 후 실행해주세요."); return;
-            }
-            const utterance = new SpeechSynthesisUtterance(textToRead);
-            utterance.lang = 'ko-KR'; // 한국어
-            window.speechSynthesis.speak(utterance);
-        }
-
-        // 시뮬레이터 수학 연산 기능
-        function runSimulation() {
-            const m = parseFloat(document.getElementById('weight').value);
-            const Cd = parseFloat(document.getElementById('cd').value);
-            const speed = parseFloat(document.getElementById('speed').value);
-            const battery = 75; // 75kWh 고정
-
-            document.getElementById('wVal').innerText = m;
-            document.getElementById('cVal').innerText = Cd;
-            document.getElementById('sVal').innerText = speed;
-
-            const g = 9.81; const mu = 0.011; const rho = 1.225; const A = 2.25;
-            const v = speed / 3.6;
-            const F_total = (mu * m * g) + (0.5 * rho * (v * v) * Cd * A);
-            
-            const distanceMeter = (battery * 3600000 * 0.87) / F_total;
-            document.getElementById('resultDistance').innerText = (distanceMeter / 1000).toFixed(0);
+                car_weight_kg: Number(m),
+                drag_coefficient_cd: Number(Cd),
+                driving_speed_kmh: Number(speed),
+                battery_capacity_kwh: Number(battery),
+                calculated_distance_km: Number(distance),
+                created_at: new Date().toISOString()
+            })
+            .then(() => {
+                alert("🎉 데이터가 Firebase 클라우드 DB에 실시간으로 저장되었습니다!");
+            })
+            .catch((error) => {
+                alert("❌ 저장 실패: " + error.message + "\nFirebase 콘솔 [Rules(규칙)] 탭에서 false를 true로 바꿨는지 확인해 주세요!");
+            });
         }
     </script>
 
     <style>
-        body { font-family: sans-serif; background: #f0f2f5; padding: 20px; }
-        .container { max-width: 700px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { color: #0056b3; text-align: center; border-bottom: 2px solid #0056b3; padding-bottom: 10px; }
-        .auth-panel { text-align: center; background: #e9ecef; padding: 20px; border-radius: 8px; }
-        .auth-panel input { padding: 10px; margin: 5px; width: 200px; }
-        .btn { padding: 10px 15px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
-        .btn-blue { background: #007bff; } .btn-gray { background: #6c757d; }
-        .btn-green { background: #28a745; width: 100%; margin-top: 10px; }
-        .btn-orange { background: #fd7e14; width: 100%; margin-top: 10px; }
-        .btn-dark { background: #343a40; width: 100%; margin-top: 10px; }
-        .slider-group { margin-bottom: 15px; }
-        .slider-group label { display: block; font-weight: bold; }
-        .slider-group input { width: 100%; }
-        .result-text { font-size: 2rem; color: #dc3545; font-weight: bold; text-align: center; }
-        .ai-box { background: #e3f2fd; border: 1px dashed #0056b3; padding: 15px; margin-top: 15px; border-radius: 5px; line-height: 1.5; }
+        :root {
+            --primary-color: #00796b;
+            --primary-dark: #004d40;
+            --accent-color: #e65100;
+            --bg-color: #f5f7f8;
+            --card-bg: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 30px 15px;
+            color: #333;
+        }
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        }
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-top: 0;
+            font-size: 1.8rem;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 15px;
+        }
+        .concept-panel {
+            background-color: #e0f2f1;
+            border-left: 5px solid var(--primary-color);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 30px;
+        }
+        .panel {
+            background: #fafafa;
+            padding: 22px;
+            border-radius: 10px;
+            border: 1px solid #eef0f2;
+        }
+        .panel h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #444;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+        }
+        .control-group {
+            margin-bottom: 22px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #555;
+        }
+        .val-indicator {
+            float: right;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary-color);
+        }
+        .display-box {
+            text-align: center;
+            padding: 15px 0;
+        }
+        .distance-output {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            margin: 10px 0;
+        }
+        .unit {
+            font-size: 1.2rem;
+            color: #666;
+        }
+        .dynamic-analysis {
+            font-size: 0.88rem;
+            color: #555;
+            background: #fff;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px dashed #ccc;
+            line-height: 1.6;
+            margin-bottom: 20px;
+            min-height: 90px;
+        }
+        .submit-btn {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 121, 107, 0.2);
+        }
+        .submit-btn:hover {
+            background-color: var(--primary-dark);
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>🚀 스마트 EV 데이터 연동 플랫폼</h1>
-
-    <div id="loginBox" class="auth-panel">
-        <h2>🔒 시스템 로그인</h2>
-        <p>평가용 테스트 계정을 만드세요 (예: a@a.com / 123456)</p>
-        <input type="email" id="emailInput" placeholder="이메일"><br>
-        <input type="password" id="pwdInput" placeholder="비밀번호(6자리 이상)"><br>
-        <button class="btn btn-blue" onclick="handleLogin()">로그인</button>
-        <button class="btn btn-gray" onclick="handleSignup()">회원가입</button>
+    <h1>🔋 기계공학-SW 융합: 친환경 전기차 효율 시뮬레이터</h1>
+    
+    <div class="concept-panel">
+        <strong>[물리학 및 기계공학적 원리]</strong><br>
+        • 구름 저항력: Fr = μ · m · g (차량 중량에 비례)<br>
+        • 공기 저항력: Fd = 0.5 · ρ · v² · Cd · A (주행 속도의 제곱에 비례)
     </div>
 
-    <div id="mainBox" style="display: none;">
-        <div style="background: #d4edda; padding: 10px; border-radius: 5px; margin-bottom: 20px; display: flex; justify-content: space-between;">
-            <strong id="userDisplay">접속중</strong>
-            <button onclick="auth.signOut()" style="border:none; background:transparent; cursor:pointer; text-decoration:underline;">로그아웃</button>
+    <div class="main-layout">
+        <div class="panel">
+            <h3>🛠️ 차량 설계 파라미터 (Input)</h3>
+            
+            <div class="control-group">
+                <label>차량 공차중량 (kg) <span class="val-indicator" id="weightVal">1600</span></label>
+                <input type="range" id="weight" min="1000" max="2500" step="50" value="1600" oninput="runSimulation()">
+            </div>
+
+            <div class="control-group">
+                <label>공기저항계수 (Cd) <span class="val-indicator" id="cdVal">0.26</span></label>
+                <input type="range" id="cd" min="0.18" max="0.45" step="0.01" value="0.26" oninput="runSimulation()">
+            </div>
+
+            <div class="control-group">
+                <label>크루즈 주행 속도 (km/h) <span class="val-indicator" id="speedVal">80</span></label>
+                <input type="range" id="speed" min="30" max="150" step="5" value="80" oninput="runSimulation()">
+            </div>
+
+            <div class="control-group">
+                <label>배터리 팩 용량 (kWh) <span class="val-indicator" id="batteryVal">75</span></label>
+                <input type="range" id="battery" min="40" max="100" step="5" value="75" oninput="runSimulation()">
+            </div>
         </div>
 
-        <h3>1. 차량 스펙 조절</h3>
-        <div class="slider-group">
-            <label>차량 무게: <span id="wVal">1600</span> kg</label>
-            <input type="range" id="weight" min="1000" max="2500" step="50" value="1600" oninput="runSimulation()">
-        </div>
-        <div class="slider-group">
-            <label>공기저항계수(Cd): <span id="cVal">0.26</span></label>
-            <input type="range" id="cd" min="0.18" max="0.45" step="0.01" value="0.26" oninput="runSimulation()">
-        </div>
-        <div class="slider-group">
-            <label>주행 속도: <span id="sVal">80</span> km/h</label>
-            <input type="range" id="speed" min="30" max="150" step="5" value="80" oninput="runSimulation()">
-        </div>
+        <div class="panel">
+            <h3>📊 시뮬레이션 결과 (Output)</h3>
+            <div class="display-box">
+                <p style="margin:0; color:#777;">예상 항속 거리</p>
+                <div class="distance-output"><span id="resultDistance">0</span><span class="unit"> km</span></div>
+            </div>
+            
+            <div class="dynamic-analysis" id="analysisBox">
+                슬라이더 바를 조작하여 설계 수치를 변경해 보세요.
+            </div>
 
-        <div style="text-align: center; margin: 20px 0;">
-            <p style="margin: 0;">예상 항속 거리 (배터리 75kWh 기준)</p>
-            <div class="result-text"><span id="resultDistance">0</span> km</div>
+            <button class="submit-btn" onclick="saveDataToFirebase()">💾 클라우드 DB에 설계 저장</button>
         </div>
-
-        <button class="btn btn-green" onclick="saveData()">💾 1. Firebase 데이터베이스에 저장</button>
-        <button class="btn btn-orange" onclick="askAI()">🤖 2. API 연동 AI 컨설팅 받기</button>
-        
-        <div id="aiResultBox" class="ai-box">
-            차량 스펙을 설정한 뒤 위 버튼을 눌러 AI 진단을 받아보세요.
-        </div>
-
-        <button class="btn btn-dark" onclick="playTTS()">📢 3. 진단 결과 TTS로 듣기</button>
     </div>
 </div>
+
+<script>
+function runSimulation() {
+    const m = parseFloat(document.getElementById('weight').value);
+    const Cd = parseFloat(document.getElementById('cd').value);
+    const kmhSpeed = parseFloat(document.getElementById('speed').value);
+    const batteryKwh = parseFloat(document.getElementById('battery').value);
+
+    document.getElementById('weightVal').innerText = m;
+    document.getElementById('cdVal').innerText = Cd;
+    document.getElementById('speedVal').innerText = kmhSpeed;
+    document.getElementById('batteryVal').innerText = batteryKwh;
+
+    const g = 9.81; const mu = 0.011; const rho = 1.225; const A = 2.25;
+    const v = kmhSpeed / 3.6;
+
+    const Fr = mu * m * g;
+    const Fd = 0.5 * rho * (v * v) * Cd * A;
+    const F_total = Fr + Fd;
+
+    const totalEnergyJoule = batteryKwh * 3600000;
+    const peEfficiency = 0.87; 
+    
+    const distanceMeter = (totalEnergyJoule * peEfficiency) / F_total;
+    const distanceKm = distanceMeter / 1000;
+
+    document.getElementById('resultDistance').innerText = distanceKm.toFixed(0);
+
+    const analysisBox = document.getElementById('analysisBox');
+    if (kmhSpeed >= 100) {
+        analysisBox.innerHTML = `⚠️ <strong>고속 영역 분석:</strong> 현재 속도(${kmhSpeed}km/h)에서는 공기 저항력이 주된 원인이 됩니다. Cd 감소 설계가 핵심입니다.`;
+    } else {
+        analysisBox.innerHTML = `🌱 <strong>도심 저속 분석:</strong> 현재 주행 환경에서는 구름 저항력이 큰 비중을 차지합니다. 차량 중량 경량화가 핵심 요인입니다.`;
+    }
+}
+window.onload = runSimulation;
+</script>
 
 </body>
 </html>
